@@ -2,7 +2,7 @@ from flask import Flask, render_template, redirect, url_for, request
 import os
 from config.settings import db
 from flask_migrate import Migrate
-import models
+from models import Post
 from flask import flash
 from dotenv import load_dotenv
 load_dotenv()
@@ -16,27 +16,41 @@ app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{ROOT_PATH}/db/blog.db"
 db.init_app(app)
 Migrate(app, db)
 
+# 首頁
 @app.route('/')
-@app.route('/post')
+@app.route('/posts')
 def index():
-    return render_template('posts/index.html.jinja')
+    posts = Post.query.order_by(Post.id.desc()).all()
+    return render_template('posts/index.html.jinja', posts=posts)
 
+# 新增文章(頁面)
 @app.route("/posts/new")
 def new():
     return render_template("posts/new.html.jinja")
 
+# 新增文章(功能)
 @app.route("/posts/create", methods=["POST"])
 def create():
     title = request.form.get("title")
     content = request.form.get("content")
 
-    post = models.Post(title=title, content=content)
+    post = Post(title=title, content=content)
     db.session.add(post)
     db.session.commit() # 寫入資料庫
 
     flash("文章已新增")
     return redirect(url_for("index"))
 
+# 檢視文章詳細內容(頁面)
+@app.route("/posts/<int:id>")
+def detail(id):
+    post = Post.query.get_or_404(id)
+    return render_template("posts/detail.html.jinja", post=post)
+
+# 404錯誤處理
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template("common/404.html.jinja"), 404
 
 if __name__ == '__main__':
     app.run(port=5050, debug=True)
