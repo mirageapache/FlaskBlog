@@ -47,6 +47,37 @@ def detail(id):
     post = Post.query.get_or_404(id)
     return render_template("posts/detail.html.jinja", post=post)
 
+# 編輯文章(頁面)
+@app.route("/posts/<int:id>/edit")
+def edit(id):
+    post = Post.query.get_or_404(id)
+    return render_template("posts/edit.html.jinja", post=post)
+
+# 編輯文章(功能)
+@app.route("/posts/<int:id>/update", methods=["POST"])
+def update(id):
+    post = Post.query.get_or_404(id)
+
+    post.title = request.form.get("title")
+    post.content = request.form.get("content")
+
+    db.session.add(post)
+    db.session.commit()
+
+    flash("文章更新成功！")
+    return redirect(url_for("detail", id=id))
+
+# 刪除文章(功能)
+@app.route("/posts/<int:id>/delete", methods=["POST"])
+def delete(id):
+    post = Post.query.get_or_404(id)
+
+    db.session.delete(post)
+    db.session.commit()
+
+    flash("文章已刪除")
+    return redirect(url_for("index"))
+
 # 404錯誤處理
 @app.errorhandler(404)
 def page_not_found(e):
